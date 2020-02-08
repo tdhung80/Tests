@@ -561,4 +561,13 @@ namespace FastAccessProperty
             public ILEmitter ifbyref_ldloca_else_ldloc (LocalBuilder local, Type type) { if (type.IsByRef) ldloca(local); else ldloc(local); return this; }
         }
     }
+
+    public static class ReflectionExtensions
+    {
+        public static IEnumerable<Type> GetParameterTypes (this MethodBase method) {
+            foreach (var param in method.GetParameters()) {
+                yield return param.ParameterType;
+            }
+        }
+    }
 }

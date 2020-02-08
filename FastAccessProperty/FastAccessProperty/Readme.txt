@@ -1,0 +1,1 @@
+﻿Administrator Developer Command Prompt: ngen install FastAccessProperty.exe

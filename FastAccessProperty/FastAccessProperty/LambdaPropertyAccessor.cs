@@ -9,14 +9,14 @@
 	/// <summary>
 	/// About 30-40 times faster than using Reflection
 	/// </summary>
-	public class LamdaPropertyAccessor : IPropertyAccessor
+	public class LambdaPropertyAccessor : IPropertyAccessor
 	{
 		private Func<object, object> _getter;
 		private Action<object, object> _setter;
 		private PropertyInfo _propInfo;
 
 
-		public LamdaPropertyAccessor (PropertyInfo propInfo)
+		public LambdaPropertyAccessor (PropertyInfo propInfo)
 		{
 			_propInfo = propInfo; // failsafe
 

@@ -45,10 +45,10 @@ namespace FastAccessProperty
 		public object Get (object target)
 		{
 			if (mCanRead) {
-				if (this.mEmittedPropertyAccessor == null) {
-					this.Init();
+				if (mEmittedPropertyAccessor == null) {
+					Init();
 				}
-				return this.mEmittedPropertyAccessor.Get(target);
+				return mEmittedPropertyAccessor.Get(target);
 			} else {
 				throw new
 					PropertyAccessorException(string.Format("Property \"{0}\" does" +
@@ -64,8 +64,8 @@ namespace FastAccessProperty
 		public void Set (object target, object value)
 		{
 			if (mCanWrite) {
-				if (this.mEmittedPropertyAccessor == null) {
-					this.Init();
+				if (mEmittedPropertyAccessor == null) {
+					Init();
 				}
 				//
 				// Set the property value
@@ -137,7 +137,7 @@ namespace FastAccessProperty
 		/// </summary>
 		private void Init ()
 		{
-			this.InitTypes();
+			InitTypes();
 			// Create the assembly and an instance of the 
 			// property accessor class.
 			var assembly = EmitAssembly();
