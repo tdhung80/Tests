@@ -21,7 +21,7 @@
         // CreateInstantiateObjectDelegate
         internal static InstantiateObjectHandler CreateInstantiateObjectHandler(Type type)
         {
-            ConstructorInfo constructorInfo = type.GetConstructor(BindingFlags.Public | 
+            var constructorInfo = type.GetConstructor(BindingFlags.Public | 
                    BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[0], null);
 
             if (constructorInfo == null)
@@ -30,16 +30,14 @@
                     "The type {0} must declare an empty constructor (the constructor may be private, internal, protected, protected internal, or public).", type));
             }
 
-            DynamicMethod dynamicMethod = new DynamicMethod("InstantiateObject", 
-                    MethodAttributes.Static | 
-                  MethodAttributes.Public, CallingConventions.Standard, typeof(object), 
+            var dynamicMethod = new DynamicMethod("InstantiateObject", 
+                    MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard, typeof(object), 
                     null, type, true);
 
-            ILGenerator generator = dynamicMethod.GetILGenerator();
+            var generator = dynamicMethod.GetILGenerator();
             generator.Emit(OpCodes.Newobj, constructorInfo);
             generator.Emit(OpCodes.Ret);
-            return (InstantiateObjectHandler)dynamicMethod.CreateDelegate
-                    (typeof(InstantiateObjectHandler));
+            return (InstantiateObjectHandler)dynamicMethod.CreateDelegate(typeof(InstantiateObjectHandler));
         }
     
         // CreateGetDelegate
@@ -61,8 +59,8 @@
         // CreateGetDelegate
         internal static GetHandler CreateGetHandler(Type type, FieldInfo fieldInfo)
         {
-            DynamicMethod dynamicGet = CreateGetDynamicMethod(type);
-            ILGenerator getGenerator = dynamicGet.GetILGenerator();
+            var dynamicGet = CreateGetDynamicMethod(type);
+            var getGenerator = dynamicGet.GetILGenerator();
 
             getGenerator.Emit(OpCodes.Ldarg_0);
             getGenerator.Emit(OpCodes.Ldfld, fieldInfo);
@@ -92,8 +90,8 @@
         // CreateSetDelegate
         internal static SetHandler CreateSetHandler(Type type, FieldInfo fieldInfo)
         {
-            DynamicMethod dynamicSet = CreateSetDynamicMethod(type);
-            ILGenerator setGenerator = dynamicSet.GetILGenerator();
+            var dynamicSet = CreateSetDynamicMethod(type);
+            var setGenerator = dynamicSet.GetILGenerator();
 
             setGenerator.Emit(OpCodes.Ldarg_0);
             setGenerator.Emit(OpCodes.Ldarg_1);
@@ -107,15 +105,13 @@
         // CreateGetDynamicMethod
         private static DynamicMethod CreateGetDynamicMethod(Type type)
         {
-            return new DynamicMethod("DynamicGet", typeof(object), 
-                  new Type[] { typeof(object) }, type, true);
+            return new DynamicMethod("DynamicGet", typeof(object), new Type[] { typeof(object) }, type, true);
         }
 
         // CreateSetDynamicMethod
         private static DynamicMethod CreateSetDynamicMethod(Type type)
         {
-            return new DynamicMethod("DynamicSet", typeof(void), 
-                  new Type[] { typeof(object), typeof(object) }, type, true);
+            return new DynamicMethod("DynamicSet", typeof(void), new Type[] { typeof(object), typeof(object) }, type, true);
         }
 
         // BoxIfNeeded

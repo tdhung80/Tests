@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace FastAccessProperty
 {
@@ -13,8 +8,11 @@ namespace FastAccessProperty
     {
         static void Main (string[] args)
         {
+            // TODO: Add tests for DelegateFactory and FastReflection
+
             var type = typeof(TestClass);
 			var propInfo = type.GetProperty("StringProp");
+            var methodInfo = type.GetMethod("SimpleMethod");
             var emitAccessor = new EmitPropertyAccessor(type, "StringProp");
 			var lamdaAccessor = new LamdaPropertyAccessor(propInfo);
 			var dynamicMethodGetter = DynamicMethodCompiler.CreateGetHandler(propInfo);
@@ -87,10 +85,15 @@ namespace FastAccessProperty
 	public interface ITestClass
 	{
 		string StringProp { get; set; }
-	}
+
+        void SimpleMethod ();
+    }
 
     public class TestClass : ITestClass
     {
         public string StringProp { get; set; }
+
+        public void SimpleMethod () {
+        }
     }
 }
