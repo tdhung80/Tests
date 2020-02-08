@@ -95,6 +95,49 @@ namespace FastAccessProperty
 
             return (DynamicMethodDelegate)dynamicMethod.CreateDelegate(typeof(DynamicMethodDelegate));
         }
+
+        public static Func<object, object> CreatePropertyGetter (PropertyInfo propertyInfo) {
+            var dynam = new DynamicMethod(string.Empty, typeof(object), EmitHelper.SingleObject, EmitHelper.DynamicModule, true);
+            var il = dynam.GetILGenerator();
+            var methodInfo = propertyInfo.GetGetMethod();
+
+            if (!methodInfo.IsStatic) {
+                il.PushInstance(propertyInfo.DeclaringType);
+            }
+
+            if (methodInfo.IsFinal || !methodInfo.IsVirtual) {
+                il.Emit(OpCodes.Call, methodInfo);
+            } else {
+                il.Emit(OpCodes.Callvirt, methodInfo);
+            }
+
+            il.EmitBoxIfNeeded(propertyInfo.PropertyType);
+            il.Emit(OpCodes.Ret);
+
+            return (Func<object, object>)dynam.CreateDelegate(typeof(Func<object, object>));
+        }
+
+        public static Action<object, object> CreatePropertySetter (PropertyInfo propertyInfo) {
+            var dynam = new DynamicMethod(string.Empty, typeof(void), EmitHelper.TwoObjects, EmitHelper.DynamicModule, true);
+            var il = dynam.GetILGenerator();
+            var methodInfo = propertyInfo.GetSetMethod();
+
+            if (!methodInfo.IsStatic) {
+                il.PushInstance(propertyInfo.DeclaringType);
+            }
+
+            il.Emit(OpCodes.Ldarg_1);
+            il.EmitUnboxIfNeeded(propertyInfo.PropertyType);
+
+            if (methodInfo.IsFinal || !methodInfo.IsVirtual) {
+                il.Emit(OpCodes.Call, methodInfo);
+            } else {
+                il.Emit(OpCodes.Callvirt, methodInfo);
+            }
+            il.Emit(OpCodes.Ret);
+
+            return (Action<object, object>)dynam.CreateDelegate(typeof(Action<object, object>));
+        }
     }
 
     public static class EmitHelper
@@ -173,50 +216,4 @@ namespace FastAccessProperty
         }
     }
 
-    public static class MyPropertyAccessor
-    {
-        private static Func<object, object> CreatePropertyGetterHandler (PropertyInfo propertyInfo) {
-            var dynam = new DynamicMethod(string.Empty, typeof(object), EmitHelper.SingleObject, EmitHelper.DynamicModule, true);
-            var il = dynam.GetILGenerator();
-            var methodInfo = propertyInfo.GetGetMethod();
-
-            if (!methodInfo.IsStatic) {
-                il.PushInstance(propertyInfo.DeclaringType);
-            }
-
-            if (methodInfo.IsFinal || !methodInfo.IsVirtual) {
-                il.Emit(OpCodes.Call, methodInfo);
-            } else {
-                il.Emit(OpCodes.Callvirt, methodInfo);
-            }
-
-            il.EmitBoxIfNeeded(propertyInfo.PropertyType);
-            il.Emit(OpCodes.Ret);
-
-            return (Func<object, object>)dynam.CreateDelegate(typeof(Func<object, object>));
-        }
-
-        private static Action<object, object> CreatePropertySetterHandler (PropertyInfo propertyInfo) {
-            var dynam = new DynamicMethod(string.Empty, typeof(void), EmitHelper.TwoObjects, EmitHelper.DynamicModule, true);
-            var il = dynam.GetILGenerator();
-            var methodInfo = propertyInfo.GetSetMethod();
-
-            if (!methodInfo.IsStatic) {
-                il.PushInstance(propertyInfo.DeclaringType);
-            }
-
-            il.Emit(OpCodes.Ldarg_1);
-            il.EmitUnboxIfNeeded(propertyInfo.PropertyType);
-
-            if (methodInfo.IsFinal || !methodInfo.IsVirtual) {
-                il.Emit(OpCodes.Call, methodInfo);
-            } else {
-                il.Emit(OpCodes.Callvirt, methodInfo);
-            }
-            il.Emit(OpCodes.Ret);
-
-            return (Action<object, object>)dynam.CreateDelegate(typeof(Action<object, object>));
-        }
-
-    }
 }

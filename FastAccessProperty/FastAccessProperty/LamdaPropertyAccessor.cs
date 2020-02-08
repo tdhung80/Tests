@@ -42,10 +42,7 @@
 				Expression.Lambda<Func<object, object>>(
 					Expression.Convert(
 						Expression.Call(
-							Expression.Convert(obj, method.DeclaringType),
-							method),
-						typeof(object)),
-					obj);
+							Expression.Convert(obj, method.DeclaringType), method), typeof(object)), obj);
 
 			return expr.Compile();
 		}
@@ -61,9 +58,7 @@
 					Expression.Call(
 						Expression.Convert(obj, method.DeclaringType),
 						method,
-						Expression.Convert(value, method.GetParameters()[0].ParameterType)),
-					obj,
-					value);
+						Expression.Convert(value, method.GetParameters()[0].ParameterType)), obj, value);
 
 			return expr.Compile();
 		}

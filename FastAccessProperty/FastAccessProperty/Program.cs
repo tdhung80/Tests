@@ -8,76 +8,103 @@ namespace FastAccessProperty
     {
         static void Main (string[] args)
         {
-            // TODO: Add tests for DelegateFactory and FastReflection
+            // Proxy, Code Generation, PostSharp
+            const int N = 10000000;
 
             var type = typeof(TestClass);
 			var propInfo = type.GetProperty("StringProp");
             var methodInfo = type.GetMethod("SimpleMethod");
             var emitAccessor = new EmitPropertyAccessor(type, "StringProp");
 			var lamdaAccessor = new LamdaPropertyAccessor(propInfo);
-			var dynamicMethodGetter = DynamicMethodCompiler.CreateGetHandler(propInfo);
-			var dynamicMethodSetter = DynamicMethodCompiler.CreateSetHandler(propInfo);
+			var dynamicMethodGetter = DynamicMethodCompiler.CreateGetHandler(propInfo); // DelegateFactory.CreatePropertyGetter(propInfo);
+            var dynamicMethodSetter = DynamicMethodCompiler.CreateSetHandler(propInfo); // DelegateFactory.CreatePropertySetter(propInfo);
+            var delegateMethod = DelegateFactory.Create(methodInfo);
+            var dynamicMethod = FastReflection.DelegateForCall(methodInfo);
 
             var testObject = new TestClass() { StringProp = "Hello" };
 			var testInterface = testObject as ITestClass;
             
-			Console.Write("Start...");
+			Console.WriteLine("Getter tests");
 			emitAccessor.Get(testObject);
-            dynamicMethodGetter(testObject);
+            //dynamicMethodGetter(testObject);
 			lamdaAccessor.Get(testObject);
-	        Console.WriteLine("Read test");
 			var m = 0;
 			do {
-				var n = 10000000;
+                Console.WriteLine("  Round #" + ++m);
+
 				Loop("Direct", () => testObject.StringProp);
 				Loop("Interface", () => testInterface.StringProp);
-				Loop("Reflection", () => propInfo.GetValue(testObject), n / 50);
-				Loop("EmitPropertyAccessor", () => emitAccessor.Get(testObject));
-				Loop("LamdaPropertyAccessor", () => lamdaAccessor.Get(testObject));
-				Loop("DynamicMethodCompiler", () => dynamicMethodGetter(testObject));
+                Loop("DynamicMethodCompiler", () => dynamicMethodGetter(testObject));
+                Loop("EmitPropertyAccessor", () => emitAccessor.Get(testObject));                
+                Loop("LamdaPropertyAccessor", () => lamdaAccessor.Get(testObject));
+                Loop("Reflection", () => propInfo.GetValue(testObject), N, 50);
 
-				Console.WriteLine("Wait 5s");
-				Thread.Sleep(5000);
-			} while (m++ < 2);
-			Console.WriteLine("\r\n\r\n");
+                //Console.WriteLine("  Wait 5s");
+				//Thread.Sleep(5000);
+			} while (m < 2);
+			Console.WriteLine("\r\n");
 
-			Console.Write("Start..."); // compile
+			Console.WriteLine("Setter tests"); // compile
 			emitAccessor.Set(testObject, "Hello1");
-			dynamicMethodSetter(testObject, "Hello1");
+			//dynamicMethodSetter(testObject, "Hello1");
 			lamdaAccessor.Set(testObject, "Hello1");
-			Console.WriteLine("Write test");
 			m = 0;
 			do {
-				var n = 10000000;
-				Loop("Direct", () => testObject.StringProp = "Hello1");
-				Loop("Interface", () => testInterface.StringProp  = "Hello1");
-				Loop("Reflection", () => propInfo.SetValue(testObject, "Hello1"), n / 50);
-				Loop("EmitPropertyAccessor", () => emitAccessor.Set(testObject, "Hello1"));
-				Loop("LamdaPropertyAccessor", () => lamdaAccessor.Set(testObject, "Hello1"));
-				Loop("DynamicMethodCompiler", () => dynamicMethodSetter(testObject, "Hello1"));
+                Console.WriteLine("  Round #" + ++m);
 
-				Console.WriteLine("Wait 5s");
-				Thread.Sleep(5000);
-			} while (m++ < 2);
+                Loop("Direct", () => testObject.StringProp = "Hello1");
+				Loop("Interface", () => testInterface.StringProp  = "Hello1");
+                Loop("DynamicMethodCompiler", () => dynamicMethodSetter(testObject, "Hello1"));
+                Loop("EmitPropertyAccessor", () => emitAccessor.Set(testObject, "Hello1"));                
+                Loop("LamdaPropertyAccessor", () => lamdaAccessor.Set(testObject, "Hello1"));
+                Loop("Reflection", () => propInfo.SetValue(testObject, "Hello1"), N, 50);
+
+                //Console.WriteLine("  Wait 5s");
+				//Thread.Sleep(5000);
+			} while (m < 2);
+            Console.WriteLine("\r\n");
+
+            Console.WriteLine("Invoke tests");
+            //emitAccessor.Set(testObject, "Hello1");
+            //dynamicMethodSetter(testObject, "Hello1");
+            //lamdaAccessor.Set(testObject, "Hello1");
+            m = 0;
+            do {
+                Console.WriteLine("  Round #" + ++m);
+
+                Loop("Direct", () => testObject.SimpleMethod());
+                Loop("Interface", () => testInterface.SimpleMethod());                
+                Loop("DelegateFactory", () => delegateMethod.Invoke(testObject, null));
+                Loop("DynamicMethod", () => dynamicMethod.Invoke(testObject, null));
+                Loop("Reflection", () => methodInfo.Invoke(testObject, null), N, 50);
+
+                //Loop("EmitPropertyAccessor", () => emitAccessor.Set(testObject, "Hello1"));
+                //Loop("LamdaPropertyAccessor", () => lamdaAccessor.Set(testObject, "Hello1"));
+                //Loop("DynamicMethodCompiler", () => dynamicMethodSetter(testObject, "Hello1"));
+
+                //Console.WriteLine("  Wait 5s");
+                //Thread.Sleep(5000);
+            } while (m < 2);
+            Console.WriteLine("\r\n");
 
             Console.WriteLine("--- DONE ---");
             Console.ReadKey();
         }
 
-	    static void Loop (string title, Action action, int n = 10000000) {
+	    static void Loop (string title, Action action, int n = 10000000, int k = 1) {
 			var sw = Stopwatch.StartNew();
-			for (int i = 0; i < n; i++) {
+			for (int i = 0, m = n / k; i < m; i++) {
 				action();
 			}
-			Console.WriteLine(title + " in " + sw.ElapsedMilliseconds + " ms");
+			Console.WriteLine("    " + title + " in " + sw.ElapsedMilliseconds * k + " ms");
 	    }
 
-		static void Loop (string title, Func<object> action, int n = 10000000) {
+		static void Loop (string title, Func<object> action, int n = 10000000, int k = 1) {
 			var sw = Stopwatch.StartNew();
-			for (int i = 0; i < n; i++) {
+			for (int i = 0, m = n /k; i < m; i++) {
 				action();
 			}
-			Console.WriteLine(title + " in " + sw.ElapsedMilliseconds + " ms");
+			Console.WriteLine("    " + title + " in " + sw.ElapsedMilliseconds * k + " ms");
 		}
 
     }
